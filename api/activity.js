@@ -58,34 +58,36 @@ router.get('/:activity', function (req, response) {
 /*
  * Route to replace data for a business.
  */
-router.put('/:businessID', function (req, res, next) {
-  const mysqlPool = req.app.locals.mysqlPool;
-  const businessID = parseInt(req.params.businessID);
-  if (validation.validateAgainstSchema(req.body, businessSchema)) {
-    replaceBusinessByID(businessID, req.body, mysqlPool)
-      .then((updateSuccessful) => {
-        if (updateSuccessful) {
-          res.status(200).json({
-            links: {
-              business: `/businesses/${businessID}`
-            }
-          });
-        } else {
-          next();
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        res.status(500).json({
-          error: "Unable to update specified business.  Please try again later."
-        });
-      });
-  } else {
-    res.status(400).json({
-      error: "Request body is not a valid business object"
-    });
-  }
+router.put('/', function (req, response) {
+	name = req.body.name;	
+	type = req.body.type;
+	MongoClient.connect(url, function(err, db) {
+	  if (err) throw err;
+	  var dbo = db.db("mydb");
+	  var myquery = { name: name };
+	  var newvalues = { $set: {type: type } };
+	  dbo.collection("activity").updateOne(myquery, newvalues, function(err, res) {
+	    if (err) throw err;
+	    console.log("1 document updated");
+	    db.close();
+		response.send("activity updated!");
+	  });
+	});
 });
 
+router.delete('/', function (req, res, next) {
+	name = req.body.name;
+	MongoClient.connect(url, function(err, db) {
+	  if (err) throw err;
+	  var dbo = db.db("mydb");
+	  var myquery = { name: name };
+	  dbo.collection("activity").deleteOne(myquery, function(err, obj) {
+	    if (err) throw err;
+	    console.log("1 document deleted");
+	    db.close();
+		res.send("activity deleted!");
+	  });
+});
+});
 exports.router = router;
 //exports.getBusinessesByOwnerID = getBusinessesByOwnerID;
